@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Boost Control Tables Explained — MegaSquirt MS3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Antonio:wght@400;700&family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0e;
+    --bg-alt: #161617;
+    --bg-panel: #1c1c1e;
+    --bg-quote: #14130f;
+    --border: #2a2a2c;
+    --border-strong: #3a3a3c;
+    --text: #ebe5d8;
+    --text-mute: #9a948a;
+    --text-fade: #6b665e;
+    --accent: #d97706;
+    --accent-soft: #b06006;
+    --danger: #b04444;
+    --safe: #5d8c5a;
+    --link: #6da7a3;
+    --link-hover: #8dbeba;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 0 24px; }
+  h1, h2, h3, h4 {
+    font-family: 'Antonio', sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    line-height: 1.05;
+    margin: 0;
+    color: var(--text);
+  }
+  h1 { font-size: clamp(48px, 9vw, 88px); }
+  h2 { font-size: clamp(32px, 5vw, 48px); margin-top: 4rem; }
+  h3 { font-size: 22px; margin-top: 2.5rem; letter-spacing: 0.04em; }
+  h4 { font-size: 16px; letter-spacing: 0.08em; color: var(--text-mute); margin-top: 1.5rem; }
+  p { margin: 1rem 0; }
+  a { color: var(--link); text-decoration: none; border-bottom: 1px dotted var(--link); transition: color 0.15s, border-color 0.15s; }
+  a:hover { color: var(--link-hover); border-color: var(--link-hover); }
+  code, .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.9em; }
+  code {
+    background: var(--bg-panel);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.85em;
+    color: var(--accent);
+  }
+
+  /* Hero */
+  .hero {
+    padding: 7rem 24px 5rem;
+    border-bottom: 1px solid var(--border);
+    background:
+      radial-gradient(ellipse at 80% 0%, rgba(217, 119, 6, 0.08), transparent 50%),
+      radial-gradient(ellipse at 0% 100%, rgba(109, 167, 163, 0.04), transparent 50%);
+  }
+  .hero .wrap { max-width: 900px; }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    display: block;
+  }
+  .hero h1 {
+    margin-bottom: 1.5rem;
+  }
+  .hero h1 .accent { color: var(--accent); }
+  .hero .lede {
+    font-size: clamp(20px, 2.5vw, 26px);
+    line-height: 1.4;
+    color: var(--text-mute);
+    max-width: 600px;
+    font-style: italic;
+    margin: 0;
+  }
+
+  /* Section header strip */
+  .section-mark {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 5rem;
+    margin-bottom: 0.5rem;
+  }
+  .section-mark .num {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+  }
+  .section-mark .rule {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Lede paragraph - bigger first paragraph */
+  .lede-p {
+    font-size: 19px;
+    line-height: 1.55;
+  }
+  .lede-p::first-letter {
+    font-family: 'Antonio', sans-serif;
+    font-weight: 700;
+    font-size: 4.5em;
+    float: left;
+    line-height: 0.85;
+    margin: 0.05em 0.1em 0 0;
+    color: var(--accent);
+  }
+
+  /* Tooltips */
+  .tt {
+    position: relative;
+    border-bottom: 1px dashed var(--accent);
+    color: var(--text);
+    cursor: help;
+    text-decoration: none;
+  }
+  .tt:hover, .tt:focus-within { color: var(--accent); }
+  .tt-content {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: 320px;
+    padding: 14px 16px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    font-family: 'Newsreader', serif;
+    font-style: normal;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+    z-index: 100;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    text-align: left;
+    white-space: normal;
+  }
+  .tt-content::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--border-strong);
+  }
+  .tt:hover .tt-content,
+  .tt:focus-within .tt-content,
+  .tt:active .tt-content { display: block; }
+  .tt-content a {
+    color: var(--accent);
+    border-bottom: 1px dotted var(--accent);
+    font-size: 13px;
+  }
+  .tt-content .src {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-fade);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 8px;
+    display: block;
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+  }
+
+  /* Tables (real MS3 table representations) */
+  .ms-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 2rem 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-strong);
+  }
+  .ms-table th, .ms-table td {
+    padding: 6px 10px;
+    text-align: center;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .ms-table th {
+    background: var(--bg-quote);
+    font-weight: 500;
+    color: var(--text-mute);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .ms-table th:first-child, .ms-table td:first-child {
+    background: var(--bg-quote);
+    color: var(--text-mute);
+    font-size: 11px;
+    text-align: right;
+    padding-right: 12px;
+    border-right: 2px solid var(--border-strong);
+  }
+  .ms-table tr:last-child th:first-child {
+    border-bottom: 2px solid var(--border-strong);
+  }
+  .ms-table .h { background: rgba(176, 68, 68, 0.18); color: #e89898; }
+  .ms-table .m { background: rgba(217, 119, 6, 0.15); color: #f0b070; }
+  .ms-table .l { background: rgba(93, 140, 90, 0.18); color: #9bc498; }
+  .ms-table .o { background: rgba(109, 167, 163, 0.12); color: #8dbeba; }
+  .ms-table .annot { color: var(--text-fade); font-size: 11px; }
+  .ms-table caption {
+    caption-side: top;
+    text-align: left;
+    font-family: 'Antonio', sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    padding-bottom: 8px;
+  }
+
+  /* Callout boxes */
+  .callout {
+    margin: 2.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: var(--bg-quote);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+  }
+  .callout.warn { border-left-color: var(--danger); }
+  .callout.safe { border-left-color: var(--safe); }
+  .callout-label {
+    font-family: 'Antonio', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+  .callout.warn .callout-label { color: var(--danger); }
+  .callout.safe .callout-label { color: var(--safe); }
+  .callout p { margin: 0.5rem 0; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* Pull-quote */
+  blockquote {
+    margin: 2.5rem 0;
+    padding: 0 0 0 2rem;
+    border-left: 2px solid var(--accent);
+    font-style: italic;
+    font-size: 21px;
+    line-height: 1.45;
+    color: var(--text);
+  }
+  blockquote cite {
+    display: block;
+    font-style: normal;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-fade);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 0.75rem;
+  }
+
+  /* Formula display */
+  .formula {
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+  }
+  .formula .eq { color: var(--accent); padding: 0 0.5em; }
+  .formula .lbl {
+    display: block;
+    font-family: 'Antonio', sans-serif;
+    font-size: 12px;
+    color: var(--text-fade);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Worked examples */
+  .work-ex {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  .work-ex h4 { margin-top: 0; color: var(--accent); }
+  .work-ex .step {
+    display: flex;
+    gap: 1rem;
+    align-items: baseline;
+    margin: 0.5rem 0;
+  }
+  .work-ex .step .n {
+    font-family: 'Antonio', sans-serif;
+    color: var(--accent);
+    width: 28px;
+    flex-shrink: 0;
+    font-size: 18px;
+  }
+  .work-ex .step .v {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text);
+    font-size: 14px;
+  }
+
+  /* Diagram (SVG-like flow) */
+  .flow-diagram {
+    margin: 2.5rem 0;
+    padding: 2rem 1rem;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow-x: auto;
+  }
+  .flow-diagram svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+
+  /* Sources section */
+  .sources {
+    margin-top: 6rem;
+    padding-top: 3rem;
+    border-top: 1px solid var(--border);
+  }
+  .sources ul {
+    list-style: none;
+    padding: 0;
+  }
+  .sources li {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .sources .s-title {
+    font-family: 'Antonio', sans-serif;
+    font-size: 16px;
+    letter-spacing: 0.04em;
+    color: var(--text);
+    text-transform: uppercase;
+  }
+  .sources .s-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-fade);
+    letter-spacing: 0.05em;
+  }
+
+  /* Footer */
+  footer {
+    margin-top: 6rem;
+    padding: 3rem 24px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    color: var(--text-fade);
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.05em;
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .hero { padding: 4rem 24px 3rem; }
+    .ms-table { font-size: 11px; }
+    .ms-table th, .ms-table td { padding: 4px 6px; }
+    blockquote { font-size: 18px; padding-left: 1.25rem; }
+    .lede-p::first-letter { font-size: 3.5em; }
+    .tt-content { left: 0; transform: translateX(0); max-width: calc(100vw - 60px); }
+    .tt-content::after { left: 20%; }
+  }
+
+  /* Print */
+  @media print {
+    body { background: white; color: black; }
+    .tt-content { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Tuning Reference / MegaSquirt MS3</span>
+    <h1>What the <span class="accent">numbers</span><br>actually mean.</h1>
+    <p class="lede">A plain-English guide to the boost target table, the bias duty table, and the way they decide what your wastegate does next.</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============================================ -->
+<!-- SECTION 1: TARGET TABLE -->
+<!-- ============================================ -->
+
+<div class="section-mark">
+  <span class="num">§ 01</span>
+  <span class="rule"></span>
+</div>
+<h2>The boost target table</h2>
+
+<p class="lede-p">The boost target table is the controller's wish. It tells the ECU: <em>at this engine speed and this throttle position, try to make this much manifold pressure.</em> It does not promise that pressure happens. It says what the controller is aiming at.</p>
+
+<p>Every cell in the table holds one number. That number is in <span class="tt" tabindex="0">kilopascals absolute<span class="tt-content">An absolute pressure measurement, with zero meaning a perfect vacuum. Standard atmospheric pressure at sea level is about 101 kPa absolute, which equals 0 psi gauge on a boost gauge.<span class="src">Unit · SI</span></span></span> — <span class="mono">kPa abs</span>. Atmospheric pressure at sea level is about 101 kPa. Anything above 101 is <span class="tt" tabindex="0">boost<span class="tt-content">When manifold pressure exceeds atmospheric pressure. A boost gauge reads zero at atmospheric and counts upward in psi or bar from there. Vacuum is below atmospheric.<span class="src">Glossary</span></span></span>. Anything below is vacuum.</p>
+
+<h3>Reading a real one</h3>
+
+<p>This is the actual top half of a target table from a stock-turbo Mazdaspeed Miata. Rows are throttle position; columns are engine RPM. Cells are kPa absolute. The hot cells are colored hotter.</p>
+
+<table class="ms-table">
+<caption>Boost target table — rows: TPS %, columns: RPM, cells: kPa abs</caption>
+<thead>
+<tr><th></th><th>3000</th><th>3500</th><th>4000</th><th>4500</th><th>5000</th><th>5500</th><th>6000</th><th>6500</th></tr>
+</thead>
+<tbody>
+<tr><th>100%</th><td class="m">152</td><td class="h">160</td><td class="h">160</td><td class="m">139</td><td class="m">135</td><td class="l">122</td><td class="l">119</td><td class="l">115</td></tr>
+<tr><th>80%</th><td class="m">150</td><td class="h">157</td><td class="h">158</td><td class="m">139</td><td class="m">134</td><td class="l">121</td><td class="l">117</td><td class="l">115</td></tr>
+<tr><th>60%</th><td class="m">135</td><td class="m">142</td><td class="m">154</td><td class="m">140</td><td class="m">132</td><td class="l">119</td><td class="l">115</td><td class="l">115</td></tr>
+<tr><th>40%</th><td class="l">120</td><td class="l">125</td><td class="l">130</td><td class="l">130</td><td class="l">128</td><td class="l">119</td><td class="l">115</td><td class="l">115</td></tr>
+<tr><th>20%</th><td class="o">105</td><td class="o">108</td><td class="o">110</td><td class="o">110</td><td class="o">110</td><td class="o">108</td><td class="o">108</td><td class="o">105</td></tr>
+<tr><th>0%</th><td class="o">100</td><td class="o">100</td><td class="o">100</td><td class="o">100</td><td class="o">100</td><td class="o">100</td><td class="o">100</td><td class="o">100</td></tr>
+</tbody>
+</table>
+
+<p>The cell at 4000 RPM, 100% throttle says <code>160</code>. That means: when the driver is wide open and the engine is spinning 4000, the controller will aim at 160 kPa absolute manifold pressure.</p>
+
+<h3>Converting to psi gauge</h3>
+
+<p>The number on a boost gauge is the <em>gauge</em> pressure — pressure above atmospheric. To convert kPa absolute into psi gauge:</p>
+
+<div class="formula">
+  <span class="lbl">Convert</span>
+  psi gauge <span class="eq">=</span> (kPa abs <span class="eq">−</span> 101.3) <span class="eq">×</span> 0.145
+</div>
+
+<p>So the <code>160</code> at WOT/4000 in the table above is <code>(160 − 101.3) × 0.145 = 8.5 psi</code>. That's the boost target.</p>
+
+<div class="callout">
+  <span class="callout-label">Quick conversions</span>
+  <p>0 psi = 101 kPa · 5 psi = 135 · 7 psi = 149 · 10 psi = 170 · 14 psi = 198 · 20 psi = 239 · 25 psi = 273</p>
+</div>
+
+<h3>Why low cells matter too</h3>
+
+<p>The bottom row (0% TPS) is set to <code>100</code> across the board — atmospheric. That tells the controller: when the driver isn't asking for boost, don't try to make any. Wastegate stays open, manifold sits at idle vacuum.</p>
+
+<p>The middle rows (40–80% TPS) hold partial-throttle targets. A driver cruising at 60% throttle at 4500 RPM doesn't want full boost — they want a moderate amount, hence the <code>140</code> in that cell instead of the <code>148</code> at WOT. This is what gives the throttle pedal a sensible feel. Per the <span class="tt" tabindex="0">MS3-Pro manual<span class="tt-content">Official documentation from DIYAutoTune covering the closed-loop boost control settings, including the role of throttle position in the target table. <a href="https://www.manualslib.com/manual/1331880/Megasquirt-Ms3-Pro.html?page=195" target="_blank">Page 195 →</a><span class="src">MS3-Pro Manual · Page 195</span></span></span>: "Typically, lower throttle positions will have lower boost targets. This lets you modulate the boost with the throttle."</p>
+
+<h3>What the controller can actually deliver</h3>
+
+<p>Here's the thing the table doesn't know about: hardware. A target says "aim at 160 kPa," but whether the engine can <em>make</em> 160 kPa depends on three independent ceilings, each of which can be lower than the target:</p>
+
+<div class="callout warn">
+  <span class="callout-label">⚠ The three ceilings</span>
+  <p><strong>Compressor ceiling.</strong> Your turbo's compressor can only flow so much air. A stock IHI on a Miata peaks around 13–14 psi at its sweet spot RPM and falls off at the redline. No table value gets you above that. Target 25 psi with a stock IHI and you'll just stare at the wastegate fully closed making 13 psi.</p>
+  <p><strong>Injector ceiling.</strong> Each injector can only stay open for so much of each engine cycle before it's commanded longer than the cycle window. Past about <span class="tt" tabindex="0">85% duty cycle<span class="tt-content">Industry-consensus safety limit for static-flow injectors. At 100% the injector is fully saturated and cannot deliver more fuel even if commanded. The 15% margin handles transients, voltage sag, and dead-time variation.<span class="src">FIC, Injector Dynamics, RC Engineering</span></span></span> the engine starts running lean of target. Past 100% the injector is delivering its absolute physical maximum and any further "command" goes nowhere. AFR drifts lean. Detonation risk goes up fast.</p>
+  <p><strong>Knock ceiling.</strong> Pump fuel only resists detonation up to a certain effective compression. With a 9.5:1 static engine on 91 octane, you're typically out of timing margin around 12–14 psi. More boost = needs more octane or water/methanol injection.</p>
+</div>
+
+<p>The <em>real</em> safe boost at any RPM is the smallest of: target, compressor max, injector max, and knock max. That's what a good tune respects. It's why the table values taper down at high RPM on a small turbo with stock injectors: the injector and compressor limits drop with engine speed, and the table follows.</p>
+
+<!-- ============================================ -->
+<!-- SECTION 2: BIAS DUTY TABLE -->
+<!-- ============================================ -->
+
+<div class="section-mark">
+  <span class="num">§ 02</span>
+  <span class="rule"></span>
+</div>
+<h2>The bias duty table</h2>
+
+<p class="lede-p">The bias duty table is the controller's first guess. It tells the ECU: <em>given that the target boost is X and the engine is spinning at Y, here is roughly what the wastegate solenoid duty should be.</em> The PID then adjusts from that starting point.</p>
+
+<h3>What is duty cycle?</h3>
+
+<p>Your wastegate is held shut (or pulled open) by a solenoid that pulses on and off many times per second. <span class="tt" tabindex="0">Duty cycle<span class="tt-content">The fraction of each PWM period that the solenoid is energized. 25% duty means it's on for one quarter of the time, off for three quarters. MS3 supports 11.1–78 Hz in slow mode and 12–1021 Hz in mid mode.<span class="src">MS3-Pro Manual · Page 194</span></span></span> is the percentage of time the solenoid is energized. 25% duty means the solenoid is on for one quarter of every cycle. 75% means three quarters. This car's MS3 is set at 39 Hz, in the 19.5–39 Hz range that DIYAutoTune recommends for their boost control solenoid.</p>
+
+<p>What duty cycle does to the wastegate depends on the <span class="tt" tabindex="0">Output Polarity setting<span class="tt-content">Set in MS3 under boost control settings. "Normal" is the standard fail-safe configuration: loss of power → minimum boost; with this setting, higher duty cycle = more boost. "Inverted" is the opposite. <a href="https://www.manualslib.com/manual/1331880/Megasquirt-Ms3-Pro.html?page=194" target="_blank">Page 194 →</a><span class="src">MS3-Pro Manual · Page 194</span></span></span> in your boost control configuration. With Normal polarity (the standard fail-safe setup, which is what your car runs):</p>
+
+<div class="callout">
+  <span class="callout-label">Convention for this car (Normal polarity)</span>
+  <p><strong>0% duty</strong> = solenoid de-energized = dome vented = <strong>wastegate spring controls</strong> = minimum boost (the engine lands at whatever the spring's set pressure is, plus whatever the gate can't bleed off).</p>
+  <p><strong>100% duty</strong> = solenoid fully energized = dome held at max pressure = <strong>gate forced closed</strong> = maximum boost build effort.</p>
+  <p>From the MS3-Pro manual: <em>"Normal is used when you have a conventionally set up boost control solenoid designed to go to minimum boost if it loses power as a fail-safe; with this setting, higher duty cycle means higher levels of boost."</em></p>
+</div>
+
+<p>If your car is set to "Inverted" polarity instead, the convention flips: lower duty makes more boost. The polarity setting is matched to your specific solenoid and plumbing such that "higher duty = more boost" should always be the result on a properly-configured setup. If you're unsure, a low-RPM 3rd gear pull will tell you immediately.</p>
+
+<h3>The table itself</h3>
+
+<p>Your bias duty table is 8 by 8. The Y axis is target boost (in kPa abs, same as the target table). The X axis is RPM. A cell answers: <em>"if I'm being asked for this much boost at this RPM, what duty should I start with?"</em></p>
+
+<table class="ms-table">
+<caption>Bias duty 1 — rows: target kPa, columns: RPM, cells: duty %</caption>
+<thead>
+<tr><th></th><th>1000</th><th>2000</th><th>3000</th><th>4000</th><th>5000</th><th>6000</th><th>7000</th><th>8000</th></tr>
+</thead>
+<tbody>
+<tr><th>205</th><td class="o">100</td><td class="m">39</td><td class="m">39</td><td class="m">39</td><td class="m">41</td><td class="m">43</td><td class="m">45</td><td class="m">45</td></tr>
+<tr><th>171</th><td class="o">100</td><td class="m">36</td><td class="m">36</td><td class="m">36</td><td class="m">38</td><td class="m">40</td><td class="m">42</td><td class="m">42</td></tr>
+<tr><th>164</th><td class="o">100</td><td class="m">34</td><td class="m">34</td><td class="m">34</td><td class="m">36</td><td class="m">38</td><td class="m">40</td><td class="m">40</td></tr>
+<tr><th>150</th><td class="o">100</td><td class="m">32</td><td class="m">32</td><td class="m">32</td><td class="m">34</td><td class="m">36</td><td class="m">38</td><td class="m">38</td></tr>
+<tr><th>143</th><td class="o">100</td><td class="l">0</td><td class="l">0</td><td class="l">0</td><td class="l">0</td><td class="l">0</td><td class="l">0</td><td class="l">0</td></tr>
+<tr><th>100</th><td class="o">100</td><td class="l">0</td><td class="l">0</td><td class="l">0</td><td class="l">0</td><td class="l">0</td><td class="l">0</td><td class="l">0</td></tr>
+</tbody>
+</table>
+
+<p>Reading it: at row Y=164 (target ~9 psi gauge), column 4000 RPM, the value is 34. That means: <em>"if the controller wants 9 psi boost and I'm at 4000 RPM, start the wastegate solenoid duty at 34%."</em> Then the PID measures actual MAP, compares to the target, and trims duty up or down from 34 to land on target.</p>
+
+<p>The 100% values in column 1000 RPM (very low RPM) are the controller's "primed for spool" state — full solenoid effort, gate forced closed, ready to make boost the moment exhaust energy arrives. At idle this doesn't actually do anything because the engine isn't producing exhaust to drive the turbine. The 0% values in the low-target rows (Y=100, Y=143) are saying "if all you're asking for is atmospheric or near-spring pressure, no solenoid effort is needed — let the wastegate spring do its thing."</p>
+
+<h3>Why the bias table exists at all</h3>
+
+<p>You could in theory let a pure PID controller figure out the duty from scratch every time. In practice that's twitchy and slow. The bias table gives the controller a head start so the PID is doing small corrections, not large ones. From DIYAutoTune's <span class="tt" tabindex="0">Matt Cramer<span class="tt-content">Lead at DIYAutoTune.com, who manufactures the MS3-Pro. His description of the bias table is the canonical reference. <a href="https://www.msextra.com/forums/viewtopic.php?t=62621" target="_blank">MSExtra forum →</a><span class="src">MSExtra Forum · t=62621</span></span></span>:</p>
+
+<blockquote>
+"The target boost level is simply how much boost you want to run. The bias table is how much duty cycle the MS3-Pro should start with to give you that much boost. It then uses PID to adjust the duty cycle if you don't hit your target."
+<cite>Matt Cramer · DIYAutoTune</cite>
+</blockquote>
+
+<h3>Tuning the bias table</h3>
+
+<p>The clean way to set the bias table: log a real WOT pull, watch what duty cycle you actually settle at to hold each (target, RPM) combination, then put those duty values in the table. The PID after that has near-zero work to do in steady state, and all of its authority is available to fight transients (sudden boost spikes, sudden pedal lifts).</p>
+
+<p>If your bias table is set too high, the PID will be constantly trimming downward. If it's too low, the PID will be constantly trimming up. Either way, you've burned PID authority on something the table should have known. From <span class="tt" tabindex="0">Ken Culver<span class="tt-content">MS3 firmware developer, longtime MSExtra forum moderator. His guidance on bias-table tuning is canonical for the platform. <a href="https://www.msextra.com/forums/viewtopic.php?f=131&t=62607" target="_blank">MSExtra forum →</a><span class="src">MSExtra Forum · t=62607</span></span></span> on MSExtra:</p>
+
+<blockquote>
+"When in the setup mode, build the bias table KPA values from your wastegate spring pressure to slightly above the max desired KPA. Then you will need to fill in the rest of the table with DC values that relate to the KPA values at the various RPM's. [...] You may find that higher DC values are needed at higher RPM's because exhaust back pressure may be pushing the wastegate more open."
+<cite>Ken Culver · MS3 Developer</cite>
+</blockquote>
+
+<!-- ============================================ -->
+<!-- SECTION 3: HOW THEY WORK TOGETHER -->
+<!-- ============================================ -->
+
+<div class="section-mark">
+  <span class="num">§ 03</span>
+  <span class="rule"></span>
+</div>
+<h2>How they work together</h2>
+
+<p class="lede-p">Every few milliseconds, the ECU runs the same loop. It reads where you are (RPM, throttle, current MAP), looks up where you should be (target table), looks up roughly what duty that needs (bias table), then trims with the PID based on the gap between actual and target.</p>
+
+<div class="flow-diagram">
+<svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" aria-label="Boost control loop diagram">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#d97706"/>
+    </marker>
+    <style>
+      .box { fill: #1c1c1e; stroke: #3a3a3c; stroke-width: 1; }
+      .box-accent { fill: #1c1c1e; stroke: #d97706; stroke-width: 1.5; }
+      .label { fill: #ebe5d8; font-family: 'Antonio', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+      .sub { fill: #9a948a; font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+      .conn { stroke: #d97706; stroke-width: 1.5; fill: none; }
+      .conn-dim { stroke: #6b665e; stroke-width: 1; fill: none; stroke-dasharray: 3 3; }
+      .conn-label { fill: #d97706; font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+    </style>
+  </defs>
+
+  <!-- Inputs -->
+  <rect class="box" x="20" y="20" width="120" height="50" rx="3"/>
+  <text class="label" x="80" y="42" text-anchor="middle">RPM, TPS</text>
+  <text class="sub" x="80" y="58" text-anchor="middle">where you are</text>
+
+  <!-- Target table -->
+  <rect class="box-accent" x="200" y="20" width="160" height="50" rx="3"/>
+  <text class="label" x="280" y="42" text-anchor="middle">Target table</text>
+  <text class="sub" x="280" y="58" text-anchor="middle">→ target MAP (kPa)</text>
+
+  <!-- Bias table -->
+  <rect class="box-accent" x="200" y="120" width="160" height="50" rx="3"/>
+  <text class="label" x="280" y="142" text-anchor="middle">Bias duty table</text>
+  <text class="sub" x="280" y="158" text-anchor="middle">→ duty %, first guess</text>
+
+  <!-- PID -->
+  <rect class="box-accent" x="420" y="70" width="120" height="50" rx="3"/>
+  <text class="label" x="480" y="92" text-anchor="middle">PID trim</text>
+  <text class="sub" x="480" y="108" text-anchor="middle">±20% authority</text>
+
+  <!-- Solenoid -->
+  <rect class="box" x="580" y="70" width="120" height="50" rx="3"/>
+  <text class="label" x="640" y="92" text-anchor="middle">Solenoid</text>
+  <text class="sub" x="640" y="108" text-anchor="middle">PWM out</text>
+
+  <!-- Wastegate -->
+  <rect class="box" x="580" y="180" width="120" height="50" rx="3"/>
+  <text class="label" x="640" y="202" text-anchor="middle">Wastegate</text>
+  <text class="sub" x="640" y="218" text-anchor="middle">opens / closes</text>
+
+  <!-- MAP sensor (feedback) -->
+  <rect class="box" x="200" y="280" width="160" height="50" rx="3"/>
+  <text class="label" x="280" y="302" text-anchor="middle">MAP sensor</text>
+  <text class="sub" x="280" y="318" text-anchor="middle">actual boost (feedback)</text>
+
+  <!-- Connections -->
+  <!-- inputs to target table -->
+  <path class="conn" d="M 140 45 L 200 45" marker-end="url(#arrow)"/>
+  <!-- inputs to bias table -->
+  <path class="conn" d="M 140 55 Q 170 55, 170 145 L 200 145" marker-end="url(#arrow)"/>
+
+  <!-- target → PID -->
+  <path class="conn" d="M 360 45 Q 400 45, 400 80 L 420 80" marker-end="url(#arrow)"/>
+  <text class="conn-label" x="375" y="67">target</text>
+  <!-- bias → PID -->
+  <path class="conn" d="M 360 145 Q 400 145, 400 110 L 420 110" marker-end="url(#arrow)"/>
+  <text class="conn-label" x="375" y="135">base</text>
+
+  <!-- PID → solenoid -->
+  <path class="conn" d="M 540 95 L 580 95" marker-end="url(#arrow)"/>
+  <text class="conn-label" x="546" y="86">duty %</text>
+
+  <!-- solenoid → gate -->
+  <path class="conn" d="M 640 120 L 640 180" marker-end="url(#arrow)"/>
+
+  <!-- gate → MAP feedback -->
+  <path class="conn-dim" d="M 580 205 Q 480 205, 480 305 L 360 305" marker-end="url(#arrow)"/>
+  <text class="sub" x="500" y="252" fill="#6b665e">manifold pressure</text>
+
+  <!-- MAP → PID feedback loop -->
+  <path class="conn-dim" d="M 280 280 L 280 230 Q 280 200, 350 200 Q 420 200, 480 130 L 480 120" marker-end="url(#arrow)"/>
+  <text class="sub" x="320" y="220">actual</text>
+</svg>
+</div>
+
+<h3>The activation gates</h3>
+
+<p>Closed-loop PID doesn't run continuously across all conditions. MS3 has two settings — <span class="tt" tabindex="0">Lower Limit Delta<span class="tt-content">Defined in Boost Control Settings. The width below target at which PID becomes dormant and the controller forces 100% duty (gate forced closed) to encourage spool. <a href="https://www.manualslib.com/manual/1331880/Megasquirt-Ms3-Pro.html?page=195" target="_blank">Page 195 →</a><span class="src">MS3-Pro Manual · Page 195</span></span></span> and <span class="tt" tabindex="0">Upper Limit Delta<span class="tt-content">Defined in Boost Control Settings. The width above target at which PID becomes dormant and the controller forces 0% duty (gate allowed open) to prevent integral wind-up during overshoot.<span class="src">MS3-Pro Manual · Page 195</span></span></span> — that define a window around your target where PID is allowed to modulate. Outside that window, the controller falls back to forced behavior.</p>
+
+<div class="callout">
+  <span class="callout-label">The two gates</span>
+  <p><strong>Lower Limit Delta.</strong> When actual MAP is more than this far <em>below</em> target, the controller forces 100% duty. PID is dormant. This is MS3's built-in "wake up" mechanism — the wastegate is held primed for spool without the PID needing to do anything.</p>
+  <p><strong>Upper Limit Delta.</strong> When actual MAP is more than this far <em>above</em> target, the controller forces 0% duty. PID is dormant. This is anti-overshoot — solenoid backs off completely when boost has exceeded target by more than the platform's tolerance for transient excursion.</p>
+  <p>Between these two thresholds, PID is active and modulating duty around the bias table value.</p>
+</div>
+
+<p>Per <span class="tt" tabindex="0">Ken Culver<span class="tt-content">MS3 firmware developer, longtime MSExtra forum moderator. Quote from MSExtra forum thread 39019 on closed-loop boost behavior. <a href="https://www.msextra.com/forums/viewtopic.php?t=39019" target="_blank">MSExtra forum →</a><span class="src">MSExtra Forum · t=39019</span></span></span>: <em>"it'll come on at 150, keeping the wastegate closed (0% duty) until PID engages. The idea being that you'll get a faster spool."</em> The gates are MS3's native spool-encouragement and anti-overshoot mechanisms. They do not need help from clever table values.</p>
+
+<div class="callout warn">
+  <span class="callout-label">⚠ The wake-up myth</span>
+  <p>A common misconception is "encouraging spool" by setting sub-spool cells in the boost target table above atmospheric — commanding 1–2 psi at 2500 RPM, for example, with the intent of keeping the wastegate closed earlier. This is wrong on every PID-based ECU, including MS3.</p>
+  <p>The controller would integrate against an unreachable target during the entire pre-spool period, and when boost finally arrives the accumulated integral dumps as overshoot. Holley's official documentation addresses this directly: <em>"If the wastegate is fully closed at 10 psig dome pressure, there is no reason to run 40 psig. It only creates more activity for the dome pressure controller."</em></p>
+  <p>The right place to encourage spool is one of three places, none of which is the target table: (1) raise <strong>Lower Limit Delta</strong> so the platform's built-in 100% duty hold persists longer, (2) raise duty in the <strong>bias duty table</strong> at sub-spool RPM × high-target cells, or (3) in open-loop mode, populate the <strong>open-loop duty table</strong> at sub-spool RPM cells.</p>
+</div>
+
+<h3>Walk through one cycle</h3>
+
+<div class="work-ex">
+  <h4>Example: 4000 RPM, 100% throttle, current MAP = 130 kPa</h4>
+  <div class="step"><span class="n">1.</span><span class="v">Look up target. Target table cell at (4000 RPM, 100% TPS) = 160 kPa.</span></div>
+  <div class="step"><span class="n">2.</span><span class="v">Look up bias. Bias cell at (Y=160 kPa, 4000 RPM) interpolates ≈ 33% duty.</span></div>
+  <div class="step"><span class="n">3.</span><span class="v">Compute error. Target 160 − Actual 130 = +30 kPa low. Need more boost.</span></div>
+  <div class="step"><span class="n">4.</span><span class="v">Check the gates. Error of 30 may or may not exceed Lower Limit Delta. If LLD = 100, PID is active (30 < 100). If LLD = 20, PID is dormant and solenoid forced to 100%.</span></div>
+  <div class="step"><span class="n">5.</span><span class="v">PID computes correction. With Kp = 100, the proportional term adds duty in the "more boost" direction. Bias 33 + correction → final duty ≈ 38%.</span></div>
+  <div class="step"><span class="n">6.</span><span class="v">Output. Higher duty = solenoid more energized = dome held with more pressure = gate forced more closed = more boost build (Normal polarity).</span></div>
+  <div class="step"><span class="n">7.</span><span class="v">Wait, measure, repeat ~100 times per second.</span></div>
+</div>
+
+<p>The key insight: the target table is <em>where you want to go</em>. The bias table is <em>how to get most of the way there</em>. The PID is <em>the small, fast corrections</em> that close the rest of the gap, only inside the window defined by the activation gates. All four mechanisms working together produce smooth boost control.</p>
+
+<h3>Reading the log: what duty cycle tells you</h3>
+
+<p>A boost duty log shows you exactly how the controller is behaving. Some patterns are obvious; others tell you something specific is broken.</p>
+
+<div class="callout">
+  <span class="callout-label">Common signatures</span>
+  <p><strong>Smooth 30–50% steady at peak boost.</strong> Properly tuned. PID has authority and is modulating gently around a good bias value. This is what a working boost control loop looks like.</p>
+  <p><strong>Pegged at 100% the whole pull.</strong> Target is unreachable with current hardware. The controller is saturated, trying as hard as it can, and the engine still won't make the commanded boost. Check compressor capability, wastegate sizing, or exhaust restriction.</p>
+  <p><strong>Bimodal — bouncing between 0% and 40–50% during peak.</strong> Boost is overshooting target enough to trigger Upper Limit Delta. PID slams duty to zero, MAP drops, PID rebuilds duty, MAP overshoots again, repeat. The system never settles. The fix is either widening the margin between ULD and the cut threshold, or lowering target so peak actual stays inside the PID's active window.</p>
+  <p><strong>Climbs from bias to higher during steady state.</strong> Bias table value is too low for that cell. PID is contributing positive trim to hit target. Move the bias cell upward toward where the steady-state duty actually lands.</p>
+  <p><strong>Climbs from bias to lower during steady state.</strong> Opposite — bias is too high. PID is contributing negative trim. Move the bias cell downward.</p>
+</div>
+
+<p>A clean log makes the next round of tuning obvious. A bouncing or saturated log tells you something structural is wrong before you start tweaking cells.</p>
+
+<!-- ============================================ -->
+<!-- SECTION 4: HARDWARE -->
+<!-- ============================================ -->
+
+<div class="section-mark">
+  <span class="num">§ 04</span>
+  <span class="rule"></span>
+</div>
+<h2>Where the math meets the metal</h2>
+
+<p class="lede-p">No table value can override physics. The most common reasons a tuner sees actual boost not match target are all hardware. The table is doing what it's told; the engine just can't comply.</p>
+
+<h3>Injector saturation</h3>
+
+<p>Static-flow injectors have a maximum amount of fuel they can deliver per cycle. Past about 85% duty cycle they start running out of headroom; past 100% they're flowing whatever they physically can and any further command does nothing. The lean condition that follows is dangerous on a boosted engine — incomplete combustion plus high cylinder pressure plus high intake temp is a recipe for pre-ignition or detonation.</p>
+
+<p>The math is simple. At each RPM, the injector has a cycle window of <code>120000 ÷ RPM</code> milliseconds. At 6500 RPM that's 18.5 ms. Subtract dead time (~1 ms) for opening latency. The remaining time, multiplied by the injector's flow rate, is the maximum fuel mass per cycle. If your target boost demands more fuel than that, you're saturated. The fix is bigger injectors, not table tweaks.</p>
+
+<h3>Wastegate spring pressure</h3>
+
+<p>The wastegate has a spring that holds it closed against manifold pressure. When manifold pressure exceeds spring force, the gate cracks open. With the solenoid fully inactive (gate spring-only), boost stops climbing at roughly the spring's set pressure — typically 5 to 10 psi for a stock setup, higher with a "stiffer spring."</p>
+
+<p>This sets a <strong>floor</strong> on how low you can target. If you set a target of 3 psi but your spring is 7 psi, no amount of solenoid duty can take you below 7 psi at the RPMs where the turbo is making at least 7 psi worth of boost. The bias table going to 0% in those cells is the right move (max gate-open effort) but the spring is the limit.</p>
+
+<h3>Compressor flow ceiling</h3>
+
+<p>At high engine RPM, the turbo's compressor wheel is past its peak efficiency island. It's flowing a lot of air but heating it up substantially, and the pressure ratio it can sustain drops. At the same time, exhaust back pressure rises faster than charge pressure, and even with the wastegate fully open the gate can't bleed off enough exhaust energy to keep manifold pressure down.</p>
+
+<p>This is why peak boost on a small turbo at redline is often <em>higher</em> than what you wanted, not lower — the gate physically cannot relieve the pressure fast enough. Targets and bias tables set lower don't help; they just make the controller try harder. The fix is a bigger gate, an external wastegate, or a different turbo entirely.</p>
+
+<h3>Knock-limited boost</h3>
+
+<p>Even if your hardware can fuel and flow the boost you want, your fuel might not survive it. Pump 91 octane on a 9.5:1 compression turbo engine is typically out of timing margin somewhere around 12–14 psi. More than that and the engine starts pulling spark — losing power, building heat, eventually knocking. The cure is octane (race gas, ethanol blends, water/methanol injection), not table values.</p>
+
+<div class="callout safe">
+  <span class="callout-label">The honest tune</span>
+  <p>A safe, honest tune respects all four ceilings. The boost target table at any RPM should be no higher than the lowest of: compressor's capability, injector's capacity, fuel's knock margin, wastegate's bleed authority. Set a target above any of those and you're either making boost the controller can't deliver, or making boost the engine can't survive.</p>
+</div>
+
+<!-- ============================================ -->
+<!-- SECTION 5: OVERBOOST PROTECTION (NEW) -->
+<!-- ============================================ -->
+
+<div class="section-mark">
+  <span class="num">§ 05</span>
+  <span class="rule"></span>
+</div>
+<h2>Overboost protection: the safety stack</h2>
+
+<p class="lede-p">Section 04 covered the hardware ceilings — what the engine and turbo can physically tolerate. This section is the matching pair: how to set MS3's safety thresholds so the controller protects against exceeding those ceilings without nuisance-firing during normal operation.</p>
+
+<h3>Three independent thresholds</h3>
+
+<p>MS3 has three separate boost safety thresholds. Each fires at a different condition, and each has a different response. They must be set with margin between them or they fight each other.</p>
+
+<div class="callout">
+  <span class="callout-label">The protection stack</span>
+  <p><strong>1. Upper Limit Delta</strong> (PID anti-windup). Controller forces 0% duty when MAP exceeds <code>target + ULD</code>. Soft response — wastegate opens via spring, no engine cut. Lives in Boost Control Settings.</p>
+  <p><strong>2. Boost Tolerance</strong> (relative cut threshold, optional). Triggers spark and/or fuel cut when MAP exceeds <code>target + tolerance</code>. Hard response — engine loses ignition until MAP drops. Lives in Overboost Engine Protection.</p>
+  <p><strong>3. Maximum MAP</strong> (absolute hard cap). Triggers cut when MAP exceeds the configured kPa value, regardless of target. Final emergency stop, no matter what the target is doing.</p>
+</div>
+
+<h3>The margin stack</h3>
+
+<p>These thresholds must be ordered with proper margin between them, like layered safety nets:</p>
+
+<div class="formula">
+  <span class="lbl">Margin stack</span>
+  target <span class="eq"><</span> target + ULD <span class="eq"><</span> target + Tolerance <span class="eq"><</span> Maximum MAP
+</div>
+
+<p>The gap between Upper Limit Delta and Boost Tolerance is the critical one. The PID's anti-windup (ULD) should fire <em>before</em> the cut, so the controller has a chance to react softly before the hard cut takes over. If the gap is too narrow, normal spool transients will blow through both.</p>
+
+<div class="callout warn">
+  <span class="callout-label">⚠ The bouncing pattern</span>
+  <p>Typical spool overshoot on a closed-loop boost system is 15–30 kPa above target. The wastegate physically cannot open fast enough to catch a rising MAP during hard acceleration — manifold pressure rises faster than the flapper can travel. This is a hardware-response-speed phenomenon, not a tuning bug.</p>
+  <p>If Upper Limit Delta is 20 kPa and Boost Tolerance is 30 kPa, the gap is only 10 kPa. A 25 kPa overshoot triggers both: PID slams duty to zero <em>and</em> the cut fires. The duty trace in the log will be bimodal — flipping between 0% and ~40% repeatedly, never settling. The engine experiences nuisance cuts during otherwise-normal pulls.</p>
+  <p>The fix: widen the gap. Either raise Boost Tolerance, lower Upper Limit Delta, or drop the boost target so peak actual stays below both thresholds. Conservative starting points: at least 15 kPa between ULD and Tolerance, at least 10 kPa between Tolerance and Maximum MAP.</p>
+</div>
+
+<h3>What Maximum MAP should be</h3>
+
+<p>Maximum MAP is the absolute hard cap — the threshold above which the engine cuts ignition regardless of what target was being commanded. It's not a value you should ever expect to hit during normal operation. It's the protection against catastrophic boost runaway — stuck wastegate, broken vacuum line, solenoid failure, frozen control loop.</p>
+
+<p>Set it just above what your fuel system can safely fuel. If your injectors saturate around 12 psi (≈184 kPa), Maximum MAP somewhere in the 195–205 kPa range gives the controller working room up to the fuel-side ceiling, but cuts the engine if boost runs away past where the engine can safely operate.</p>
+
+<p>Hysteresis (how far MAP must drop before the cut re-enables) is typically 20–30 kPa. Too tight and you'll get cut-recover-cut oscillation. Too wide and you'll lose more time per cut event before normal operation resumes.</p>
+
+<div class="callout safe">
+  <span class="callout-label">The complete safety picture</span>
+  <p>A well-configured MS3 boost setup has all four hardware ceilings respected in the <em>target table</em>, and all three protection thresholds (ULD, Tolerance, Maximum MAP) layered above target with proper margin between them. Either layer alone is incomplete. The target table sets the aim; the protection stack catches what happens when the aim or the hardware is wrong.</p>
+</div>
+
+<!-- ============================================ -->
+<!-- SOURCES -->
+<!-- ============================================ -->
+
+<div class="sources">
+  <h2 style="margin-top: 0;">Sources & further reading</h2>
+
+  <ul>
+    <li>
+      <span class="s-title">MS3-Pro User Manual — Boost Control Settings (Page 194)</span>
+      <span class="s-meta">DIYAutoTune.com · Authoritative reference for control modes</span>
+      <a href="https://www.manualslib.com/manual/1331880/Megasquirt-Ms3-Pro.html?page=194" target="_blank">manualslib.com → page 194</a>
+    </li>
+    <li>
+      <span class="s-title">MS3-Pro User Manual — Closed Loop Specific Settings (Page 195)</span>
+      <span class="s-meta">DIYAutoTune.com · Closed Duty / Open Duty / Limit Delta definitions</span>
+      <a href="https://www.manualslib.com/manual/1331880/Megasquirt-Ms3-Pro.html?page=195" target="_blank">manualslib.com → page 195</a>
+    </li>
+    <li>
+      <span class="s-title">MS3 1.5 TunerStudio Reference</span>
+      <span class="s-meta">MSExtra · Per-parameter reference for MS3 firmware 1.5.x</span>
+      <a href="https://www.msextra.com/doc/pdf/Megasquirt3_TunerStudio_MS_Lite_Reference-1.5.pdf" target="_blank">msextra.com → PDF</a>
+    </li>
+    <li>
+      <span class="s-title">"Newbie Boost Control Set up questions"</span>
+      <span class="s-meta">MSExtra Forum · Matt Cramer (DIYAutoTune) on the bias table's role</span>
+      <a href="https://www.msextra.com/forums/viewtopic.php?t=62621" target="_blank">msextra.com → t=62621</a>
+    </li>
+    <li>
+      <span class="s-title">"Boost control issues" / 1.4.1+</span>
+      <span class="s-meta">MSExtra Forum · Ken Culver on bias-table tuning method</span>
+      <a href="https://www.msextra.com/forums/viewtopic.php?f=131&t=62607" target="_blank">msextra.com → t=62607</a>
+    </li>
+    <li>
+      <span class="s-title">"Boost Control Closed Loop"</span>
+      <span class="s-meta">MSExtra Forum · Ken Culver on Lower Limit Delta and spool behavior</span>
+      <a href="https://www.msextra.com/forums/viewtopic.php?t=39019" target="_blank">msextra.com → t=39019</a>
+    </li>
+    <li>
+      <span class="s-title">"ITT: MS3 1.4.0+ and Closed Loop EBC"</span>
+      <span class="s-meta">Miata Turbo Forum · Practical bias-table tuning walk-through</span>
+      <a href="https://www.miataturbo.net/megasquirt-18/itt-ms3-1-4-0-closed-loop-ebc-94391/" target="_blank">miataturbo.net → 94391</a>
+    </li>
+    <li>
+      <span class="s-title">"Boost control bias duty 1"</span>
+      <span class="s-meta">MSExtra Forum · 4-port MAC solenoid convention confirmation</span>
+      <a href="https://www.msextra.com/forums/viewtopic.php?f=131&t=60074" target="_blank">msextra.com → t=60074</a>
+    </li>
+    <li>
+      <span class="s-title">Holley Dominator EFI Boost Control Documentation (199R10628)</span>
+      <span class="s-meta">Holley · On commanding target above achievable boost (wake-up myth)</span>
+      <a href="https://documents.holley.com/199r10628.pdf" target="_blank">documents.holley.com → PDF</a>
+    </li>
+  </ul>
+</div>
+
+</main>
+
+<footer>
+  <div>Boost Control Tables Explained · MegaSquirt MS3 reference document · v2</div>
+  <div style="margin-top: 0.5rem;">Tap any dashed-underlined term for more detail · Sources cited at the bottom</div>
+</footer>
+
+</body>
+</html>
