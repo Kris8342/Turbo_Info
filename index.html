@@ -347,6 +347,27 @@
   }
   .flow-diagram svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
 
+  .chart-wrap {
+    margin: 2.5rem 0;
+    padding: 2rem 1.5rem;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow-x: auto;
+  }
+  .chart-wrap svg { display: block; margin: 0 auto; max-width: 100%; height: auto; min-width: 720px; }
+
+  p.aside {
+    margin: 2rem 0;
+    padding: 1rem 1.25rem;
+    border-left: 2px solid var(--accent);
+    background: rgba(217, 119, 6, 0.04);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.95rem;
+    color: var(--text-mute);
+  }
+
   /* Sources section */
   .sources {
     margin-top: 6rem;
@@ -688,6 +709,191 @@
 </div>
 
 <p>The key insight: the target table is <em>where you want to go</em>. The bias table is <em>how to get most of the way there</em>. The PID is <em>the small, fast corrections</em> that close the rest of the gap, only inside the window defined by the activation gates. All four mechanisms working together produce smooth boost control.</p>
+
+<h3>Anatomy of a WOT pull</h3>
+
+<p>What does all this look like in motion? Below is a simulated wide-open-throttle pull with target = 160 kPa, bias = 35%, and Upper Limit Delta = 20 kPa. The top panel shows pressure over time. The bottom panel shows what the solenoid is being commanded to do. Each phase of the pull shows a different mechanism dominating.</p>
+
+<div class="chart-wrap">
+<svg viewBox="0 0 880 600" xmlns="http://www.w3.org/2000/svg" aria-label="Anatomy of a WOT boost control pull">
+  <defs>
+    <style>
+      .ch-axis { stroke: #3a3a3c; stroke-width: 1; fill: none; }
+      .ch-grid { stroke: #2a2a2c; stroke-width: 0.5; stroke-dasharray: 2 4; fill: none; }
+      .ch-tick { fill: #6b665e; font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+      .ch-axis-title { fill: #9a948a; font-family: 'Antonio', sans-serif; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; }
+      .ch-phase { fill: #6b665e; font-family: 'Antonio', sans-serif; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; text-anchor: middle; }
+      .ch-phase-rule { stroke: #2a2a2c; stroke-width: 0.5; stroke-dasharray: 1 3; }
+      .ch-target { stroke: #d97706; stroke-width: 1.5; stroke-dasharray: 6 4; fill: none; }
+      .ch-uld { stroke: #b04444; stroke-width: 1; stroke-dasharray: 3 4; fill: none; opacity: 0.7; }
+      .ch-atm { stroke: #6b665e; stroke-width: 0.5; stroke-dasharray: 1 4; fill: none; }
+      .ch-bias { stroke: #9a948a; stroke-width: 1; stroke-dasharray: 4 4; fill: none; }
+      .ch-map { stroke: #5d8c5a; stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .ch-duty { stroke: #6da7a3; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .ch-line-label { font-family: 'Antonio', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+      .ch-anno { fill: #ebe5d8; font-family: 'Newsreader', serif; font-size: 12px; font-style: italic; }
+      .ch-anno-em { fill: #b04444; font-family: 'Newsreader', serif; font-size: 12px; font-style: italic; }
+      .ch-leader { stroke: #6b665e; stroke-width: 0.75; fill: none; }
+      .ch-title { fill: #ebe5d8; font-family: 'Antonio', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; }
+    </style>
+  </defs>
+
+  <!-- ============ PRESSURE PANEL ============ -->
+  <text class="ch-title" x="70" y="35">Manifold pressure</text>
+
+  <!-- Phase background bands -->
+  <rect x="70" y="60" width="168" height="260" fill="#d97706" fill-opacity="0.03"/>
+  <rect x="238" y="60" width="196" height="260" fill="#5d8c5a" fill-opacity="0.03"/>
+  <rect x="434" y="60" width="84" height="260" fill="#b04444" fill-opacity="0.06"/>
+  <rect x="518" y="60" width="252" height="260" fill="#5d8c5a" fill-opacity="0.03"/>
+
+  <!-- Y-axis -->
+  <line class="ch-axis" x1="70" y1="60" x2="70" y2="320"/>
+  <text class="ch-tick" x="65" y="64" text-anchor="end">200</text>
+  <text class="ch-tick" x="65" y="124" text-anchor="end">180</text>
+  <text class="ch-tick" x="65" y="164" text-anchor="end">160</text>
+  <text class="ch-tick" x="65" y="224" text-anchor="end">130</text>
+  <text class="ch-tick" x="65" y="284" text-anchor="end">100</text>
+  <text class="ch-tick" x="65" y="324" text-anchor="end">80</text>
+  <text class="ch-axis-title" x="20" y="190" transform="rotate(-90 20 190)" text-anchor="middle">kPa abs</text>
+
+  <!-- Gridlines -->
+  <line class="ch-grid" x1="70" y1="120" x2="770" y2="120"/>
+  <line class="ch-grid" x1="70" y1="160" x2="770" y2="160"/>
+  <line class="ch-grid" x1="70" y1="220" x2="770" y2="220"/>
+
+  <!-- X-axis -->
+  <line class="ch-axis" x1="70" y1="320" x2="770" y2="320"/>
+
+  <!-- Target line at 160 kPa -->
+  <line class="ch-target" x1="70" y1="160" x2="770" y2="160"/>
+  <text class="ch-line-label" x="775" y="163" fill="#d97706">target 160</text>
+
+  <!-- ULD threshold at 180 kPa -->
+  <line class="ch-uld" x1="70" y1="120" x2="770" y2="120"/>
+  <text class="ch-line-label" x="775" y="123" fill="#b04444">target+ULD 180</text>
+
+  <!-- Atmospheric reference at 100 kPa -->
+  <line class="ch-atm" x1="70" y1="280" x2="770" y2="280"/>
+  <text class="ch-tick" x="775" y="283" fill="#6b665e">atm 100</text>
+
+  <!-- MAP curve -->
+  <path class="ch-map" d="M 70 280 Q 150 277 238 230 Q 305 195 378 150 Q 414 128 434 120 Q 465 124 490 130 Q 520 144 546 152 Q 580 158 620 159 L 770 160"/>
+
+  <!-- Phase divider rules -->
+  <line class="ch-phase-rule" x1="238" y1="60" x2="238" y2="320"/>
+  <line class="ch-phase-rule" x1="434" y1="60" x2="434" y2="320"/>
+  <line class="ch-phase-rule" x1="518" y1="60" x2="518" y2="320"/>
+
+  <!-- Phase labels (above panel) -->
+  <text class="ch-phase" x="154" y="52">Pre-spool</text>
+  <text class="ch-phase" x="336" y="52">Spool transit</text>
+  <text class="ch-phase" x="476" y="52" fill="#b04444">Overshoot</text>
+  <text class="ch-phase" x="644" y="52">Settled</text>
+
+  <!-- Annotations on pressure panel -->
+  <text class="ch-anno" x="80" y="248">Slow turbo wake-up,</text>
+  <text class="ch-anno" x="80" y="263">MAP barely above atm</text>
+
+  <text class="ch-anno" x="270" y="178">PID climbing through</text>
+  <text class="ch-anno" x="270" y="193">activation window</text>
+
+  <text class="ch-anno-em" x="444" y="105">MAP exceeds target+ULD</text>
+  <text class="ch-anno-em" x="444" y="120">→ controller forces 0% duty</text>
+
+  <text class="ch-anno" x="600" y="178">PID modulating duty around</text>
+  <text class="ch-anno" x="600" y="193">bias to hold target</text>
+
+  <!-- MAP curve label -->
+  <text class="ch-line-label" x="180" y="265" fill="#5d8c5a">actual MAP</text>
+
+  <!-- ============ DUTY PANEL ============ -->
+  <text class="ch-title" x="70" y="395">Commanded solenoid duty</text>
+
+  <!-- Background bands matching above -->
+  <rect x="70" y="410" width="168" height="100" fill="#d97706" fill-opacity="0.03"/>
+  <rect x="238" y="410" width="196" height="100" fill="#5d8c5a" fill-opacity="0.03"/>
+  <rect x="434" y="410" width="84" height="100" fill="#b04444" fill-opacity="0.06"/>
+  <rect x="518" y="410" width="252" height="100" fill="#5d8c5a" fill-opacity="0.03"/>
+
+  <!-- Y-axis -->
+  <line class="ch-axis" x1="70" y1="410" x2="70" y2="510"/>
+  <text class="ch-tick" x="65" y="414" text-anchor="end">100</text>
+  <text class="ch-tick" x="65" y="464" text-anchor="end">50</text>
+  <text class="ch-tick" x="65" y="514" text-anchor="end">0</text>
+  <text class="ch-axis-title" x="20" y="460" transform="rotate(-90 20 460)" text-anchor="middle">duty %</text>
+
+  <!-- Gridline at 50% -->
+  <line class="ch-grid" x1="70" y1="460" x2="770" y2="460"/>
+
+  <!-- X-axis -->
+  <line class="ch-axis" x1="70" y1="510" x2="770" y2="510"/>
+
+  <!-- Bias reference at 35% -->
+  <line class="ch-bias" x1="70" y1="475" x2="770" y2="475"/>
+  <text class="ch-line-label" x="775" y="478" fill="#9a948a">bias 35%</text>
+
+  <!-- Duty curve -->
+  <path class="ch-duty" d="M 70 410 L 238 415 Q 300 425 350 445 Q 400 480 430 508 L 434 510 L 518 510 Q 540 502 565 488 Q 595 477 630 476 L 770 475"/>
+
+  <!-- Phase divider rules -->
+  <line class="ch-phase-rule" x1="238" y1="410" x2="238" y2="510"/>
+  <line class="ch-phase-rule" x1="434" y1="410" x2="434" y2="510"/>
+  <line class="ch-phase-rule" x1="518" y1="410" x2="518" y2="510"/>
+
+  <!-- Duty curve label -->
+  <text class="ch-line-label" x="150" y="430" fill="#6da7a3">commanded duty</text>
+
+  <!-- Annotations on duty panel -->
+  <text class="ch-anno" x="80" y="445">Pegged at 100%</text>
+  <text class="ch-anno" x="248" y="438">Falling as MAP</text>
+  <text class="ch-anno" x="248" y="453">approaches target</text>
+  <text class="ch-anno-em" x="436" y="498">Slammed</text>
+  <text class="ch-anno-em" x="436" y="510">to 0%</text>
+  <text class="ch-anno" x="610" y="498">PID settled at bias</text>
+
+  <!-- X-axis time labels -->
+  <line class="ch-grid" x1="70" y1="510" x2="70" y2="525"/>
+  <line class="ch-grid" x1="238" y1="510" x2="238" y2="525"/>
+  <line class="ch-grid" x1="434" y1="510" x2="434" y2="525"/>
+  <line class="ch-grid" x1="518" y1="510" x2="518" y2="525"/>
+  <line class="ch-grid" x1="770" y1="510" x2="770" y2="525"/>
+  <text class="ch-tick" x="70" y="538" text-anchor="middle">0.0s</text>
+  <text class="ch-tick" x="238" y="538" text-anchor="middle">0.6s</text>
+  <text class="ch-tick" x="434" y="538" text-anchor="middle">1.3s</text>
+  <text class="ch-tick" x="518" y="538" text-anchor="middle">1.6s</text>
+  <text class="ch-tick" x="770" y="538" text-anchor="middle">2.5s</text>
+  <text class="ch-axis-title" x="420" y="558" text-anchor="middle">time since WOT</text>
+
+  <!-- Legend strip -->
+  <g transform="translate(70, 575)">
+    <line x1="0" y1="0" x2="22" y2="0" stroke="#5d8c5a" stroke-width="2.5"/>
+    <text x="28" y="4" fill="#9a948a" font-family="JetBrains Mono" font-size="10">actual MAP</text>
+
+    <line x1="125" y1="0" x2="147" y2="0" stroke="#d97706" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <text x="153" y="4" fill="#9a948a" font-family="JetBrains Mono" font-size="10">target (table)</text>
+
+    <line x1="255" y1="0" x2="277" y2="0" stroke="#b04444" stroke-width="1" stroke-dasharray="3 4"/>
+    <text x="283" y="4" fill="#9a948a" font-family="JetBrains Mono" font-size="10">ULD trigger</text>
+
+    <line x1="380" y1="0" x2="402" y2="0" stroke="#6da7a3" stroke-width="2"/>
+    <text x="408" y="4" fill="#9a948a" font-family="JetBrains Mono" font-size="10">solenoid duty</text>
+
+    <line x1="510" y1="0" x2="532" y2="0" stroke="#9a948a" stroke-width="1" stroke-dasharray="4 4"/>
+    <text x="538" y="4" fill="#9a948a" font-family="JetBrains Mono" font-size="10">bias (table)</text>
+  </g>
+</svg>
+</div>
+
+<p>Read it left to right and top to bottom. In <strong>pre-spool</strong>, the target table is shouting "go to 160" but the turbo can't yet — MAP barely rises above atmospheric. The solenoid sits pegged at 100% duty because the PID hasn't entered its active window. The <em>bias table</em> hasn't been consulted at this point either; the controller is just trying to keep the wastegate primed shut.</p>
+
+<p>In <strong>spool transit</strong>, MAP rises fast through the PID's active range. The controller does math: it sees target − actual error closing, and reduces commanded duty proportionally. Duty drops from 100% toward the bias value. This is the moment when the bias table starts to matter — it's the duty the controller would land on if PID error were zero.</p>
+
+<p>Then the <strong>overshoot</strong>. The wastegate physically can't open fast enough to catch the rising MAP, so MAP punches through target and exceeds target+ULD. The controller's Upper Limit Delta gate fires: PID is suspended, solenoid duty is forced to 0%, dome vents completely, wastegate snaps open. This drops MAP fast — sometimes too fast, which is what causes the bouncing pattern when the margins aren't right.</p>
+
+<p>Once MAP falls back inside the PID window, the controller resumes. In <strong>settled</strong>, MAP holds at target and duty rests at bias plus or minus small PID corrections. This is what the entire pull was working toward — a stable equilibrium where the bias table value is correct enough that PID barely has to do anything.</p>
+
+<p class="aside">Every cell in both tables affects this picture. Wrong target table → the orange dashed line moves. Wrong bias table → the gray dashed line moves. Wrong activation gates → the red dashed line moves and the overshoot zone changes shape. Wrong PID gains → the rise and recovery shapes change. The chart is a portrait of every setting interacting at once.</p>
 
 <h3>Reading the log: what duty cycle tells you</h3>
 
