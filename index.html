@@ -669,8 +669,8 @@
 
 <div class="callout warn">
   <span class="callout-label">⚠ The wake-up myth</span>
-  <p>A common misconception is "encouraging spool" by setting sub-spool cells in the boost target table above atmospheric — commanding 1–2 psi at 2500 RPM, for example, with the intent of keeping the wastegate closed earlier. This is wrong on every PID-based ECU, including MS3.</p>
-  <p>The controller would integrate against an unreachable target during the entire pre-spool period, and when boost finally arrives the accumulated integral dumps as overshoot. Holley's official documentation addresses this directly: <em>"If the wastegate is fully closed at 10 psig dome pressure, there is no reason to run 40 psig. It only creates more activity for the dome pressure controller."</em></p>
+  <p>A common misconception is "encouraging spool" by setting sub-spool cells in the boost target table above atmospheric — commanding 1–2 psi at 2500 RPM, for example, with the intent of keeping the wastegate closed earlier. This is the wrong place to put that logic on every closed-loop PID boost platform that's been reviewed (MS3, Holley, AEM, Haltech, Link, MoTeC all direct spool encouragement to feedforward tables, not the target setpoint).</p>
+  <p>The controller would integrate against an unreachable target during the entire pre-spool period, and when boost finally arrives the accumulated integral dumps as overshoot. Holley's boost control documentation states the same general principle in the context of their dome pressure feedforward table: <em>"Some people choose to use artificially high values at lower engine speeds with the hope that it will accelerate spool up… but be aware that the only thing the solenoid can do is keep the wastegate closed. If the wastegate is fully closed at 10 psig dome pressure, there is no reason to run 40 psig. It only creates more activity for the dome pressure controller."</em> The artifact is different (Holley's dome pressure feedforward table vs. MS3's boost target table) but the misuse is the same: commanding a value the system physically can't reach just to encourage controller activity.</p>
   <p>The right place to encourage spool is one of three places, none of which is the target table: (1) raise <strong>Lower Limit Delta</strong> so the platform's built-in 100% duty hold persists longer, (2) raise duty in the <strong>bias duty table</strong> at sub-spool RPM × high-target cells, or (3) in open-loop mode, populate the <strong>open-loop duty table</strong> at sub-spool RPM cells.</p>
 </div>
 
@@ -779,9 +779,9 @@
 
 <div class="callout warn">
   <span class="callout-label">⚠ The bouncing pattern</span>
-  <p>Typical spool overshoot on a closed-loop boost system is 15–30 kPa above target. The wastegate physically cannot open fast enough to catch a rising MAP during hard acceleration — manifold pressure rises faster than the flapper can travel. This is a hardware-response-speed phenomenon, not a tuning bug.</p>
+  <p>Spool overshoot on a closed-loop boost system is typically in the range of 15–30 kPa above target (varies with hardware — wastegate flapper area, exhaust geometry, turbo inertia, and how aggressively the driver gets on the throttle). The wastegate physically cannot open fast enough to catch a rising MAP during hard acceleration — manifold pressure rises faster than the flapper can travel. This is a hardware-response-speed phenomenon, not a tuning bug.</p>
   <p>If Upper Limit Delta is 20 kPa and Boost Tolerance is 30 kPa, the gap is only 10 kPa. A 25 kPa overshoot triggers both: PID slams duty to zero <em>and</em> the cut fires. The duty trace in the log will be bimodal — flipping between 0% and ~40% repeatedly, never settling. The engine experiences nuisance cuts during otherwise-normal pulls.</p>
-  <p>The fix: widen the gap. Either raise Boost Tolerance, lower Upper Limit Delta, or drop the boost target so peak actual stays below both thresholds. Conservative starting points: at least 15 kPa between ULD and Tolerance, at least 10 kPa between Tolerance and Maximum MAP.</p>
+  <p>The fix: widen the gap. Either raise Boost Tolerance, lower Upper Limit Delta, or drop the boost target so peak actual stays below both thresholds. As conservative starting points (not absolute rules — actual values depend on your hardware's spool transient magnitude): aim for at least 15 kPa between ULD and Tolerance, and at least 10 kPa between Tolerance and Maximum MAP. Tune from there based on what your log shows.</p>
 </div>
 
 <h3>What Maximum MAP should be</h3>
@@ -846,9 +846,9 @@
       <a href="https://www.msextra.com/forums/viewtopic.php?f=131&t=60074" target="_blank">msextra.com → t=60074</a>
     </li>
     <li>
-      <span class="s-title">Holley Dominator EFI Boost Control Documentation (199R10628)</span>
-      <span class="s-meta">Holley · On commanding target above achievable boost (wake-up myth)</span>
-      <a href="https://documents.holley.com/199r10628.pdf" target="_blank">documents.holley.com → PDF</a>
+      <span class="s-title">Holley EFI Boost Control Instructions (199R10628 rev2)</span>
+      <span class="s-meta">Holley · Section 5.3.1 covers the "artificially high values" anti-pattern</span>
+      <a href="https://documents.holley.com/199r10628rev2.pdf" target="_blank">documents.holley.com → 199r10628rev2.pdf</a>
     </li>
   </ul>
 </div>
